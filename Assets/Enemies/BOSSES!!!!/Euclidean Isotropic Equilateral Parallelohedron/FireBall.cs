@@ -26,9 +26,6 @@ public class FireBall : MonoBehaviour
 
             // Rotate to face the player
             transform.rotation = Quaternion.LookRotation(dir);
-
-            // If your fireball model is backwards, fix it by rotating 180° around Y
-            transform.Rotate(0f, 180f, 0f);
         }
 
         // --- MOVE FORWARD ---

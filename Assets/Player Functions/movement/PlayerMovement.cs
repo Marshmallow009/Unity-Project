@@ -29,9 +29,6 @@ public class PlayerMovement : MonoBehaviour
     [Header("Collision Ignore Settings")]
     public string ignoreTag = "NoCollision";
 
-    // ------------------------------
-    // --- DASH SYSTEM SETTINGS -----
-    // ------------------------------
     [Header("Dash Settings")]
     public float dashDistance = 10f;
     public float dashDuration = 0.15f;
@@ -42,12 +39,11 @@ public class PlayerMovement : MonoBehaviour
 
     private float lastTapW, lastTapA, lastTapS, lastTapD;
 
-    // ------------------------------
-    // --- DOUBLE JUMP SETTINGS -----
-    // ------------------------------
     [Header("Double Jump Settings")]
     public int maxJumps = 2;
     private int jumpsRemaining;
+
+    private bool isSprinting = false;
 
     public int GetCurrentHealth() => PlayerCurrentHealth;
 
@@ -69,15 +65,13 @@ public class PlayerMovement : MonoBehaviour
         HandleDashInput();
 
         if (!isDashing)
-        {
             HandleMovement();
-        }
 
         HandleRotation();
     }
 
     // ------------------------------
-    // --- DASH INPUT DETECTION -----
+    // DASH INPUT
     // ------------------------------
     void HandleDashInput()
     {
@@ -89,21 +83,18 @@ public class PlayerMovement : MonoBehaviour
                 StartCoroutine(Dash(transform.forward));
             lastTapW = Time.time;
         }
-
         if (Input.GetKeyDown(KeyCode.S))
         {
             if (Time.time - lastTapS < doubleTapTime)
                 StartCoroutine(Dash(-transform.forward));
             lastTapS = Time.time;
         }
-
         if (Input.GetKeyDown(KeyCode.A))
         {
             if (Time.time - lastTapA < doubleTapTime)
                 StartCoroutine(Roll(-transform.right));
             lastTapA = Time.time;
         }
-
         if (Input.GetKeyDown(KeyCode.D))
         {
             if (Time.time - lastTapD < doubleTapTime)
@@ -113,7 +104,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ------------------------------
-    // -------- DASH LOGIC ----------
+    // DASH LOGIC
     // ------------------------------
     IEnumerator Dash(Vector3 dashDirection)
     {
@@ -145,7 +136,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ------------------------------
-    // -------- ROLL LOGIC -----------
+    // ROLL LOGIC
     // ------------------------------
     IEnumerator Roll(Vector3 rollDirection)
     {
@@ -181,23 +172,18 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ------------------------------
-    // -------- MOVEMENT -------------
+    // MOVEMENT
     // ------------------------------
-    private bool isSprinting = false; // Track sprint state
-
     void HandleMovement()
     {
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
 
-        // Toggle sprint on key press
+        // Sprint toggle
         if (Input.GetKeyDown(KeyCode.Tab))
-        {
             isSprinting = !isSprinting;
-        }
 
         float currentSpeed = isSprinting ? runSpeed : walkSpeed;
-
         float curSpeedX = canMove ? currentSpeed * Input.GetAxis("Vertical") : 0;
         float curSpeedY = canMove ? currentSpeed * Input.GetAxis("Horizontal") : 0;
 
@@ -205,10 +191,12 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = (forward * curSpeedX) + (right * curSpeedY);
         moveDirection.y = verticalVelocity;
 
-        // --- JUMPING & DOUBLE JUMP ---
+        // JUMP & DOUBLE JUMP
         if (characterController.isGrounded)
         {
-            jumpsRemaining = maxJumps; // Reset jumps
+            jumpsRemaining = maxJumps;
+            moveDirection.y = -0.1f; // Keep grounded
+
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 moveDirection.y = jumpPower;
@@ -226,7 +214,7 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // --- CROUCH ---
+        // CROUCH
         if (Input.GetKey(KeyCode.R) && canMove)
         {
             characterController.height = crouchHeight;
@@ -243,9 +231,8 @@ public class PlayerMovement : MonoBehaviour
         characterController.Move(moveDirection * Time.deltaTime);
     }
 
-
     // ------------------------------
-    // -------- ROTATION -------------
+    // ROTATION
     // ------------------------------
     void HandleRotation()
     {
@@ -258,19 +245,17 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ------------------------------
-    // -------- DAMAGE & DEATH -------
+    // DAMAGE & DEATH
     // ------------------------------
     public void TakeDamage(int damage)
     {
-        if (isDashing) return; // Invincible during dash/roll
+        if (isDashing) return;
 
         PlayerCurrentHealth -= damage;
         Debug.Log("Player took " + damage + " damage. Current health: " + PlayerCurrentHealth);
 
         if (PlayerCurrentHealth <= 0)
-        {
             Die();
-        }
     }
 
     void Die()
@@ -295,7 +280,7 @@ public class PlayerMovement : MonoBehaviour
     }
 
     // ------------------------------
-    // --- COLLISION IGNORE SYSTEM ---
+    // COLLISION IGNORE
     // ------------------------------
     void IgnoreExistingObjects()
     {
@@ -304,9 +289,7 @@ public class PlayerMovement : MonoBehaviour
         {
             Collider objCollider = obj.GetComponent<Collider>();
             if (objCollider != null && playerCollider != null)
-            {
                 Physics.IgnoreCollision(playerCollider, objCollider);
-            }
         }
     }
 
@@ -314,8 +297,6 @@ public class PlayerMovement : MonoBehaviour
     {
         Collider objCollider = obj.GetComponent<Collider>();
         if (objCollider != null && playerCollider != null)
-        {
             Physics.IgnoreCollision(playerCollider, objCollider);
-        }
     }
 }
