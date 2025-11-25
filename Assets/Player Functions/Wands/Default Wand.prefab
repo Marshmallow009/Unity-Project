@@ -28,8 +28,8 @@ Transform:
   m_GameObject: {fileID: 6394614598259210118}
   serializedVersion: 2
   m_LocalRotation: {x: 0.27059805, y: 0.6532815, z: 0.27059805, w: 0.6532815}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.1, y: 3, z: 0.1}
+  m_LocalPosition: {x: 0, y: 1.54, z: 1.54}
+  m_LocalScale: {x: 0.1, y: 2, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6964558667855229830}
@@ -242,4 +242,5 @@ MonoBehaviour:
   wandHolder: {fileID: 0}
   launchForce: 20
   maxDistance: 100
+  activeCamera: {fileID: 0}
   playerMana: {fileID: 0}

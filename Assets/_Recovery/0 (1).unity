@@ -778,6 +778,7 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
+  - component: {fileID: 330585548}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -903,6 +904,21 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &330585548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02b121990ed0f4c8f9180cae13166515, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstPersonCamera
+  playerBody: {fileID: 830727181}
+  lookSpeed: 2
+  lookXLimit: 45
 --- !u!1 &378288394
 GameObject:
   m_ObjectHideFlags: 0
@@ -2373,6 +2389,7 @@ GameObject:
   - component: {fileID: 830727187}
   - component: {fileID: 830727189}
   - component: {fileID: 830727190}
+  - component: {fileID: 830727191}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -2545,14 +2562,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dedf325d7d33e4da88d0c147069632c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  playerCamera: {fileID: 330585545}
-  thirdPersonCamera: {fileID: 838864853}
   walkSpeed: 8
   runSpeed: 14
   jumpPower: 6
   gravity: 12
-  lookSpeed: 6
-  lookXLimit: 45
   defaultHeight: 2
   crouchHeight: 1
   crouchSpeed: 3
@@ -2633,7 +2646,22 @@ MonoBehaviour:
   wandHolder: {fileID: 1663716721}
   launchForce: 20
   maxDistance: 100
+  activeCamera: {fileID: 0}
   playerMana: {fileID: 830727186}
+--- !u!114 &830727191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 830727180}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 81870934861cf476e810ee30cf37bf4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraManager
+  firstPersonCam: {fileID: 330585548}
+  thirdPersonCam: {fileID: 838864854}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2695,6 +2723,7 @@ GameObject:
   - component: {fileID: 838864853}
   - component: {fileID: 838864852}
   - component: {fileID: 838864851}
+  - component: {fileID: 838864854}
   m_Layer: 0
   m_Name: Third Person
   m_TagString: Untagged
@@ -2820,6 +2849,29 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &838864854
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 838864849}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 871a4c742e78f47e789f1bd86a28c12a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonCamera
+  player: {fileID: 830727181}
+  offset: {x: 0, y: 2, z: -4}
+  lookSpeed: 3
+  minY: -35
+  maxY: 60
+  distanceSmooth: 0.1
+  rotationSmooth: 0.1
+  collisionRadius: 0.2
+  collisionMask:
+    serializedVersion: 2
+    m_Bits: 0
 --- !u!1 &911087005
 GameObject:
   m_ObjectHideFlags: 0
