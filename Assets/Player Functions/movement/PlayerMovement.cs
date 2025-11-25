@@ -6,7 +6,9 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Player Stats")]
-    public Camera playerCamera;
+    public Camera playerCamera; // First person camera (Main Camera)
+    public Camera thirdPersonCamera; // Added for F toggle
+
     public float walkSpeed = 6f;
     public float runSpeed = 12f;
     public float jumpPower = 20f;
@@ -16,6 +18,7 @@ public class PlayerMovement : MonoBehaviour
     public float defaultHeight = 2f;
     public float crouchHeight = 1f;
     public float crouchSpeed = 3f;
+
     public int PlayerHealth = 100;
     public int PlayerCurrentHealth;
     public Transform Spawn;
@@ -23,8 +26,10 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 moveDirection = Vector3.zero;
     private float rotationX = 0f;
     private CharacterController characterController;
-    private bool canMove = true;
     private Collider playerCollider;
+
+    private bool canMove = true;
+    private bool usingFirstPerson = true; // Added
 
     [Header("Collision Ignore Settings")]
     public string ignoreTag = "NoCollision";
@@ -36,13 +41,11 @@ public class PlayerMovement : MonoBehaviour
     public float doubleTapTime = 0.3f;
     public bool canDash = true;
     private bool isDashing = false;
-
     private float lastTapW, lastTapA, lastTapS, lastTapD;
 
     [Header("Double Jump Settings")]
     public int maxJumps = 2;
     private int jumpsRemaining;
-
     private bool isSprinting = false;
 
     public int GetCurrentHealth() => PlayerCurrentHealth;
@@ -52,22 +55,42 @@ public class PlayerMovement : MonoBehaviour
         PlayerCurrentHealth = PlayerHealth;
         characterController = GetComponent<CharacterController>();
         playerCollider = GetComponent<Collider>();
+
         jumpsRemaining = maxJumps;
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
         IgnoreExistingObjects();
+
+        // Ensure correct starting camera
+        playerCamera.enabled = true;
+        thirdPersonCamera.enabled = false;
     }
 
     void Update()
     {
         HandleDashInput();
+        HandleCameraToggle(); // Added
 
         if (!isDashing)
             HandleMovement();
 
         HandleRotation();
+    }
+
+    // ------------------------------
+    // CAMERA TOGGLE
+    // ------------------------------
+    void HandleCameraToggle()
+    {
+        if (Input.GetKeyDown(KeyCode.F))
+        {
+            usingFirstPerson = !usingFirstPerson;
+
+            playerCamera.enabled = usingFirstPerson;
+            thirdPersonCamera.enabled = !usingFirstPerson;
+        }
     }
 
     // ------------------------------
@@ -83,18 +106,21 @@ public class PlayerMovement : MonoBehaviour
                 StartCoroutine(Dash(transform.forward));
             lastTapW = Time.time;
         }
+
         if (Input.GetKeyDown(KeyCode.S))
         {
             if (Time.time - lastTapS < doubleTapTime)
                 StartCoroutine(Dash(-transform.forward));
             lastTapS = Time.time;
         }
+
         if (Input.GetKeyDown(KeyCode.A))
         {
             if (Time.time - lastTapA < doubleTapTime)
                 StartCoroutine(Roll(-transform.right));
             lastTapA = Time.time;
         }
+
         if (Input.GetKeyDown(KeyCode.D))
         {
             if (Time.time - lastTapD < doubleTapTime)
@@ -110,8 +136,8 @@ public class PlayerMovement : MonoBehaviour
     {
         isDashing = true;
         canDash = false;
-
         float timer = 0f;
+
         float originalGravity = gravity;
         gravity = 0f;
 
@@ -142,8 +168,8 @@ public class PlayerMovement : MonoBehaviour
     {
         isDashing = true;
         canDash = false;
-
         float timer = 0f;
+
         float originalGravity = gravity;
         gravity = 0f;
 
@@ -179,11 +205,11 @@ public class PlayerMovement : MonoBehaviour
         Vector3 forward = transform.TransformDirection(Vector3.forward);
         Vector3 right = transform.TransformDirection(Vector3.right);
 
-        // Sprint toggle
         if (Input.GetKeyDown(KeyCode.Tab))
             isSprinting = !isSprinting;
 
         float currentSpeed = isSprinting ? runSpeed : walkSpeed;
+
         float curSpeedX = canMove ? currentSpeed * Input.GetAxis("Vertical") : 0;
         float curSpeedY = canMove ? currentSpeed * Input.GetAxis("Horizontal") : 0;
 
@@ -191,11 +217,10 @@ public class PlayerMovement : MonoBehaviour
         moveDirection = (forward * curSpeedX) + (right * curSpeedY);
         moveDirection.y = verticalVelocity;
 
-        // JUMP & DOUBLE JUMP
         if (characterController.isGrounded)
         {
             jumpsRemaining = maxJumps;
-            moveDirection.y = -0.1f; // Keep grounded
+            moveDirection.y = -0.1f;
 
             if (Input.GetKeyDown(KeyCode.Space))
             {
@@ -214,7 +239,6 @@ public class PlayerMovement : MonoBehaviour
             }
         }
 
-        // CROUCH
         if (Input.GetKey(KeyCode.R) && canMove)
         {
             characterController.height = crouchHeight;
@@ -238,9 +262,15 @@ public class PlayerMovement : MonoBehaviour
     {
         if (!canMove) return;
 
-        rotationX += -Input.GetAxis("Mouse Y") * lookSpeed;
-        rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
-        playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+        // Mouse look only affects FIRST PERSON camera
+        if (usingFirstPerson)
+        {
+            rotationX += -Input.GetAxis("Mouse Y") * lookSpeed;
+            rotationX = Mathf.Clamp(rotationX, -lookXLimit, lookXLimit);
+
+            playerCamera.transform.localRotation = Quaternion.Euler(rotationX, 0, 0);
+        }
+
         transform.rotation *= Quaternion.Euler(0, Input.GetAxis("Mouse X") * lookSpeed, 0);
     }
 
@@ -285,9 +315,11 @@ public class PlayerMovement : MonoBehaviour
     void IgnoreExistingObjects()
     {
         GameObject[] objectsToIgnore = GameObject.FindGameObjectsWithTag(ignoreTag);
+
         foreach (GameObject obj in objectsToIgnore)
         {
             Collider objCollider = obj.GetComponent<Collider>();
+
             if (objCollider != null && playerCollider != null)
                 Physics.IgnoreCollision(playerCollider, objCollider);
         }

@@ -14,24 +14,28 @@ public class WandHolder : MonoBehaviour
 
     public void EquipWand(WandData newWand)
     {
+        // Destroy old wand
         if (currentWandInstance != null)
             Destroy(currentWandInstance);
 
         equippedWand = newWand;
         if (equippedWand == null || equippedWand.wandModel == null) return;
 
-        // Instantiate wand model
+        // Instantiate wand prefab as child
         currentWandInstance = Instantiate(equippedWand.wandModel, transform);
 
-        // Keep the prefab's rotation and scale, just reset position to hand
-        currentWandInstance.transform.localPosition = Vector3.zero;
+        // Apply hand offset
+        currentWandInstance.transform.localPosition = equippedWand.handOffset;
 
-        // Find WandTip child
+        // Preserve rotation & scale
+        // No changes needed
+
+        // Find WandTip
         wandTip = currentWandInstance.transform.Find("WandTip");
         if (wandTip == null)
         {
-            Debug.LogWarning("WandTip not found! Defaulting to wand holder transform.");
-            wandTip = transform;
+            Debug.LogWarning("WandTip not found! Defaulting to wand root.");
+            wandTip = currentWandInstance.transform;
         }
     }
 }

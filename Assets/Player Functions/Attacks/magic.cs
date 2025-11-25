@@ -15,6 +15,9 @@ public class Magic : MonoBehaviour
     public float launchForce = 20f;
     public float maxDistance = 100f;
 
+    [Header("Camera")]
+    public Camera activeCamera; // assign dynamically when switching perspectives
+
     [Header("Cooldown / Mana")]
     private bool canShoot = true;
     public PlayerStats playerMana;
@@ -62,6 +65,9 @@ public class Magic : MonoBehaviour
         }
     }
 
+    // --------------------------------------------------
+    // SHOOTING COOLDOWN
+    // --------------------------------------------------
     IEnumerator ShootMagicCooldown()
     {
         canShoot = false;
@@ -77,40 +83,7 @@ public class Magic : MonoBehaviour
             yield break;
         }
 
-        // ======================================================
-        // SHIELD LOGIC (TOGGLE ON/OFF)
-        // ======================================================
-        if (spellData is Shield)
-        {
-            // If shield is active -> toggle off
-            if (Shield.activeShield != null)
-            {
-                Destroy(Shield.activeShield.gameObject);
-                Shield.activeShield = null;
-
-                // apply cooldown
-                float cd = spellData.Cooldown * (equippedWand?.cooldownMultiplier ?? 1f);
-                yield return new WaitForSeconds(cd);
-                canShoot = true;
-                yield break;
-            }
-
-            // Otherwise create a new shield
-            GameObject newShield = Instantiate(spellPrefab);
-            Shield shield = newShield.GetComponent<Shield>();
-            shield.wandData = equippedWand;
-
-            shield.Cast(Vector3.zero, wandHolder.wandTip);
-
-            float finalCooldownShield = spellData.Cooldown * (equippedWand?.cooldownMultiplier ?? 1f);
-            yield return new WaitForSeconds(finalCooldownShield);
-
-            canShoot = true;
-            yield break;
-        }
-        // ======================================================
-
-        // Mana cost
+        // Mana check
         int finalManaCost = Mathf.RoundToInt(spellData.ManaCost * (equippedWand?.magicPowerMultiplier ?? 1f));
         if (playerMana.currentMana < finalManaCost)
         {
@@ -121,14 +94,17 @@ public class Magic : MonoBehaviour
 
         playerMana.UseMana(finalManaCost);
 
-        // Raycast
-        Camera cam = Camera.main;
-        Ray ray = cam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit, maxDistance)
-            ? hit.point
-            : ray.GetPoint(maxDistance);
+        // Use currently active camera for raycasting
+        if (activeCamera == null)
+        {
+            activeCamera = Camera.main;
+        }
 
-        Vector3 spawnPosition = wandHolder.wandTip.position;
+        Ray ray = activeCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+        Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit, maxDistance) ? hit.point : ray.GetPoint(maxDistance);
+
+        // Apply projectile offset from wand tip
+        Vector3 spawnPosition = wandHolder.wandTip.position + (equippedWand?.projectileOffset ?? Vector3.zero);
         Vector3 direction = (targetPoint - spawnPosition).normalized;
 
         // Spell types
@@ -139,18 +115,18 @@ public class Magic : MonoBehaviour
         else
             ShootSingle(spellPrefab, direction, equippedWand);
 
-        // Cooldown
+        // Apply cooldown
         float finalCooldown = spellData.Cooldown * (equippedWand?.cooldownMultiplier ?? 1f);
         yield return new WaitForSeconds(finalCooldown);
         canShoot = true;
     }
 
-    // -----------------------------------------
-    // Projectile Logic
-    // -----------------------------------------
+    // --------------------------------------------------
+    // SHOOT SINGLE PROJECTILE
+    // --------------------------------------------------
     void ShootSingle(GameObject spellPrefab, Vector3 direction, WandData equippedWand)
     {
-        Vector3 spawnPosition = wandHolder.wandTip.position;
+        Vector3 spawnPosition = wandHolder.wandTip.position + (equippedWand?.projectileOffset ?? Vector3.zero);
         GameObject projectile = Instantiate(spellPrefab, spawnPosition, Quaternion.LookRotation(direction));
 
         MagicBullet bullet = projectile.GetComponent<MagicBullet>();
@@ -202,5 +178,13 @@ public class Magic : MonoBehaviour
 
         currentAttackIndex = (currentAttackIndex + 1) % magicPrefabs.Length;
         Debug.Log("Switched to: " + magicPrefabs[currentAttackIndex].name);
+    }
+
+    // --------------------------------------------------
+    // Camera switch helper
+    // --------------------------------------------------
+    public void SetActiveCamera(Camera cam)
+    {
+        activeCamera = cam;
     }
 }

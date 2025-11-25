@@ -133,15 +133,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 07fe813a1ad14443c8805d0e0d0d4b3a, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.504
+      value: -2.31
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 07fe813a1ad14443c8805d0e0d0d4b3a, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.90494746
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 07fe813a1ad14443c8805d0e0d0d4b3a, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0.423
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 07fe813a1ad14443c8805d0e0d0d4b3a, type: 3}
       propertyPath: m_LocalRotation.w
@@ -201,7 +201,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 07fe813a1ad14443c8805d0e0d0d4b3a, type: 3}
       propertyPath: m_Name
-      value: Red Septre
+      value: Crimson Septre
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 07fe813a1ad14443c8805d0e0d0d4b3a, type: 3}
       propertyPath: m_IsActive

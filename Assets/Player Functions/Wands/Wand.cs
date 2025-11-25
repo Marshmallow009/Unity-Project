@@ -7,6 +7,10 @@ public class WandData : ScriptableObject
     public string wandName = "New Wand";
     public GameObject wandModel; // Prefab of the wand
 
+    [Header("Offsets")]
+    public Vector3 handOffset = Vector3.zero;        // Offset relative to player hand
+    public Vector3 projectileOffset = Vector3.zero;  // Offset relative to WandTip for projectiles
+
     [Header("Stat Modifiers")]
     [Tooltip("Scales spell damage (1 = normal, 2 = double, etc.)")]
     public float magicPowerMultiplier = 1f;
