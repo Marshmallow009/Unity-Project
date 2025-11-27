@@ -16,7 +16,7 @@ public class Magic : MonoBehaviour
     public float maxDistance = 100f;
 
     [Header("Camera")]
-    public Camera activeCamera; // assign dynamically when switching perspectives
+    public Camera activeCamera; // assigned by CameraManager
 
     [Header("Cooldown / Mana")]
     private bool canShoot = true;
@@ -26,30 +26,37 @@ public class Magic : MonoBehaviour
     {
         if (wandHolder == null || wandHolder.wandTip == null) return;
 
-        GameObject spellPrefab = magicPrefabs.Length > 0 ? magicPrefabs[currentAttackIndex] : null;
+        GameObject spellPrefab = (magicPrefabs.Length > 0)
+            ? magicPrefabs[currentAttackIndex]
+            : null;
+
         if (spellPrefab == null) return;
 
         Transform launchPoint = wandHolder.wandTip;
         WandData equippedWand = wandHolder.equippedWand;
 
-        // --------------------------------------------------
+        // ------------------------------
         // CAST on press C
-        // --------------------------------------------------
+        // ------------------------------
         if (Input.GetKeyDown(KeyCode.C))
         {
+            // LASER SPELL
             if (spellPrefab.TryGetComponent<newLaserBeam>(out newLaserBeam laserSpell))
             {
                 laserSpell.Cast(Vector3.zero, launchPoint);
+                return;
             }
-            else if (canShoot)
+
+            // INSTANT SPELL
+            if (canShoot)
             {
                 StartCoroutine(ShootMagicCooldown());
             }
         }
 
-        // --------------------------------------------------
-        // STOP LASER
-        // --------------------------------------------------
+        // ------------------------------
+        // STOP LASER on release C
+        // ------------------------------
         if (Input.GetKeyUp(KeyCode.C))
         {
             if (spellPrefab.TryGetComponent<newLaserBeam>(out newLaserBeam laserSpell))
@@ -58,16 +65,14 @@ public class Magic : MonoBehaviour
             }
         }
 
-        // Swap attacks
+        // Swap spells
         if (Input.GetKeyDown(KeyCode.O))
-        {
             ChangeAttack();
-        }
     }
 
-    // --------------------------------------------------
-    // SHOOTING COOLDOWN
-    // --------------------------------------------------
+    // ------------------------------
+    // SHOOTING COOLDOWN HANDLER
+    // ------------------------------
     IEnumerator ShootMagicCooldown()
     {
         canShoot = false;
@@ -83,31 +88,45 @@ public class Magic : MonoBehaviour
             yield break;
         }
 
-        // Mana check
-        int finalManaCost = Mathf.RoundToInt(spellData.ManaCost * (equippedWand?.magicPowerMultiplier ?? 1f));
+        // Mana Calculation + Check
+        int finalManaCost = Mathf.RoundToInt(
+            spellData.ManaCost * (equippedWand?.magicPowerMultiplier ?? 1f)
+        );
+
         if (playerMana.currentMana < finalManaCost)
         {
-            Debug.Log("Not enough mana to cast.");
+            Debug.Log("Not enough mana.");
             canShoot = true;
             yield break;
         }
 
         playerMana.UseMana(finalManaCost);
 
-        // Use currently active camera for raycasting
+        // ------------------------------
+        // USE ACTIVE CAMERA — IMPORTANT
+        // ------------------------------
         if (activeCamera == null)
         {
-            activeCamera = Camera.main;
+            Debug.LogWarning("Magic system has no active camera assigned!");
+            canShoot = true;
+            yield break;
         }
 
-        Ray ray = activeCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-        Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit, maxDistance) ? hit.point : ray.GetPoint(maxDistance);
+        // Raycast from the camera center
+        Ray ray = activeCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f));
+        Vector3 targetPoint = Physics.Raycast(ray, out RaycastHit hit, maxDistance)
+            ? hit.point
+            : ray.GetPoint(maxDistance);
 
-        // Apply projectile offset from wand tip
-        Vector3 spawnPosition = wandHolder.wandTip.position + (equippedWand?.projectileOffset ?? Vector3.zero);
+        // Correct spawn position
+        Vector3 spawnPosition = wandHolder.wandTip.position + 
+                                (equippedWand?.projectileOffset ?? Vector3.zero);
+
         Vector3 direction = (targetPoint - spawnPosition).normalized;
 
-        // Spell types
+        // ------------------------------
+        // SPELL TYPE LOGIC
+        // ------------------------------
         if (spellData is TrippleShot)
             ShootTriple(spellPrefab, direction, equippedWand);
         else if (spellData is ShootAmount)
@@ -115,19 +134,26 @@ public class Magic : MonoBehaviour
         else
             ShootSingle(spellPrefab, direction, equippedWand);
 
-        // Apply cooldown
+        // Cooldown
         float finalCooldown = spellData.Cooldown * (equippedWand?.cooldownMultiplier ?? 1f);
         yield return new WaitForSeconds(finalCooldown);
+
         canShoot = true;
     }
 
-    // --------------------------------------------------
-    // SHOOT SINGLE PROJECTILE
-    // --------------------------------------------------
+    // ------------------------------
+    // BASIC PROJECTILE SHOOT
+    // ------------------------------
     void ShootSingle(GameObject spellPrefab, Vector3 direction, WandData equippedWand)
     {
-        Vector3 spawnPosition = wandHolder.wandTip.position + (equippedWand?.projectileOffset ?? Vector3.zero);
-        GameObject projectile = Instantiate(spellPrefab, spawnPosition, Quaternion.LookRotation(direction));
+        Vector3 spawnPosition = wandHolder.wandTip.position +
+                                (equippedWand?.projectileOffset ?? Vector3.zero);
+
+        GameObject projectile = Instantiate(
+            spellPrefab,
+            spawnPosition,
+            Quaternion.LookRotation(direction)
+        );
 
         MagicBullet bullet = projectile.GetComponent<MagicBullet>();
         if (bullet != null)
@@ -146,32 +172,29 @@ public class Magic : MonoBehaviour
     void ShootTriple(GameObject spellPrefab, Vector3 direction, WandData equippedWand)
     {
         ShootSingle(spellPrefab, direction, equippedWand);
-
-        Vector3 left = Quaternion.Euler(0, -5f, 0) * direction;
-        Vector3 right = Quaternion.Euler(0, 5f, 0) * direction;
-
-        ShootSingle(spellPrefab, left, equippedWand);
-        ShootSingle(spellPrefab, right, equippedWand);
+        ShootSingle(spellPrefab, Quaternion.Euler(0, -5, 0) * direction, equippedWand);
+        ShootSingle(spellPrefab, Quaternion.Euler(0, 5, 0) * direction, equippedWand);
     }
 
-    void ShootAmount(GameObject spellPrefab, Vector3 direction, int numOfProjectiles, WandData equippedWand)
+    void ShootAmount(GameObject spellPrefab, Vector3 direction, int count, WandData equippedWand)
     {
         ShootSingle(spellPrefab, direction, equippedWand);
 
-        int half = numOfProjectiles / 2;
+        int half = count / 2;
         float angleStep = 5f;
 
         for (int i = 1; i <= half; i++)
         {
-            float angle = angleStep * i;
-            Vector3 leftDir = Quaternion.Euler(0, -angle, 0) * direction;
-            Vector3 rightDir = Quaternion.Euler(0, angle, 0) * direction;
+            float a = angleStep * i;
 
-            ShootSingle(spellPrefab, leftDir, equippedWand);
-            ShootSingle(spellPrefab, rightDir, equippedWand);
+            ShootSingle(spellPrefab, Quaternion.Euler(0, -a, 0) * direction, equippedWand);
+            ShootSingle(spellPrefab, Quaternion.Euler(0, a, 0) * direction, equippedWand);
         }
     }
 
+    // ------------------------------
+    // SWITCH SPELL
+    // ------------------------------
     void ChangeAttack()
     {
         if (magicPrefabs.Length <= 1) return;
@@ -180,9 +203,9 @@ public class Magic : MonoBehaviour
         Debug.Log("Switched to: " + magicPrefabs[currentAttackIndex].name);
     }
 
-    // --------------------------------------------------
-    // Camera switch helper
-    // --------------------------------------------------
+    // ------------------------------
+    // Assigned by CameraManager
+    // ------------------------------
     public void SetActiveCamera(Camera cam)
     {
         activeCamera = cam;

@@ -4,6 +4,7 @@ public class CameraManager : MonoBehaviour
 {
     public FirstPersonCamera firstPersonCam;
     public ThirdPersonCamera thirdPersonCam;
+    public Magic magicSystem;   // <-- NEW
 
     private Camera firstCamComponent;
     private Camera thirdCamComponent;
@@ -39,5 +40,11 @@ public class CameraManager : MonoBehaviour
         // Activate scripts
         firstPersonCam.Activate(firstPersonActive);
         thirdPersonCam.Activate(!firstPersonActive);
+
+        // ---- NEW: Tell magic system which camera to shoot from ----
+        if (firstPersonActive)
+            magicSystem.SetActiveCamera(firstCamComponent);
+        else
+            magicSystem.SetActiveCamera(thirdCamComponent);
     }
 }

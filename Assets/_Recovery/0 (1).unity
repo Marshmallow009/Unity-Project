@@ -2662,6 +2662,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraManager
   firstPersonCam: {fileID: 330585548}
   thirdPersonCam: {fileID: 838864854}
+  magicSystem: {fileID: 830727190}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
