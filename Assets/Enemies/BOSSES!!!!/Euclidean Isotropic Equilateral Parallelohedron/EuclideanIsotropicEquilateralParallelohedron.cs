@@ -103,27 +103,33 @@ public class EuclideanIsotropicEquilateralParallelohedron : MonoBehaviour, IDama
         fireTimer += Time.deltaTime;
         if (fireTimer >= fireInterval)
         {
-            FireRandomShot();
+            FireRandomShot();  // <-- MULTI-SHOT
             fireTimer = 0f;
         }
     }
 
-    // -----------------------------
-    // 🔥 Fully accurate fire aiming
-    // -----------------------------
+    // -------------------------------
+    // 🔥 Fire 1–4 projectiles at once
+    // -------------------------------
     void FireRandomShot()
     {
         if (fireShotPrefab == null || firePoints == null || firePoints.Count == 0)
             return;
 
-        Transform firePoint = firePoints[Random.Range(0, firePoints.Count)];
+        int shotsToFire = Random.Range(1, 5); // Fires 1–4 shots
 
-        // Aiming in full 3D (fixes the “shoots over player” bug)
-        Vector3 dir = (player.position - firePoint.position).normalized;
+        for (int i = 0; i < shotsToFire; i++)
+        {
+            Transform firePoint = firePoints[Random.Range(0, firePoints.Count)];
 
-        firePoint.rotation = Quaternion.LookRotation(dir);
+            // Aim directly at player
+            Vector3 dir = (player.position - firePoint.position).normalized;
+            firePoint.rotation = Quaternion.LookRotation(dir);
 
-        Instantiate(fireShotPrefab, firePoint.position, firePoint.rotation);
+            Instantiate(fireShotPrefab, firePoint.position, firePoint.rotation);
+        }
+
+        Debug.Log($"🔥 Boss fired {shotsToFire} fireballs!");
     }
 
     void AttackIfReady()
@@ -174,5 +180,4 @@ public class EuclideanIsotropicEquilateralParallelohedron : MonoBehaviour, IDama
 
         Destroy(gameObject);
     }
-
 }

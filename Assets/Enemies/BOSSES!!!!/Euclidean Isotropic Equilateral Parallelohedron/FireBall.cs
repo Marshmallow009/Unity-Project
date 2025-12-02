@@ -1,57 +1,143 @@
 using UnityEngine;
 
-public class FireBall : MonoBehaviour
+public class HomingFireball : MonoBehaviour
 {
-    public float speed = 40f;
-    public float lifeTime = 5f;
+    [Header("Projectile Settings")]
     public int damage = 10;
+    public float speed = 15f;
+    public float rotationSpeed = 2f;
+    public float lifetime = 5f;
 
+    [Tooltip("Explodes if it gets too close (prevents hovering)")]
+    public float minimumDistanceToExplode = 1.2f;
+
+    [Tooltip("Explodes if velocity magnitude drops below this")]
+    public float minVelocityBeforeExplode = 1.0f;
+
+    [Header("Explosion Settings")]
+    public float explosionRadius = 3f;
+    public GameObject explosionEffect;
+
+    private Transform player;
     private Rigidbody rb;
+    private float elapsedTime = 0f;
+    private float homingDuration;
+    private bool isHoming = true;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
-        if (rb == null)
-            rb = gameObject.AddComponent<Rigidbody>();
+        if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
 
         rb.useGravity = false;
         rb.isKinematic = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
 
-        // --- ROTATE TOWARD PLAYER ---
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        // Make sure projectile collider is trigger (important!)
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.isTrigger = true;
+
+        // Ignore enemy collisions (requires enemies on "Enemy" layer)
+        int enemyLayer = LayerMask.NameToLayer("Enemy");
+        if (enemyLayer != -1)
         {
-            Vector3 dir = (player.transform.position - transform.position).normalized;
-
-            // Rotate to face the player
-            transform.rotation = Quaternion.LookRotation(dir);
+            Physics.IgnoreLayerCollision(gameObject.layer, enemyLayer, true);
         }
 
-        // --- MOVE FORWARD ---
-        rb.linearVelocity = transform.forward * speed;
+        // Find player
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+            player = playerObj.transform;
 
-        Destroy(gameObject, lifeTime);
+        // Homing only during first quarter of lifetime
+        homingDuration = lifetime * 0.25f;
     }
 
-    // --- COLLISION-BASED DETECTION ---
-    private void OnCollisionEnter(Collision collision)
+    void FixedUpdate()
     {
-        GameObject other = collision.gameObject;
+        elapsedTime += Time.fixedDeltaTime;
 
-        // Ignore boss & enemy
-        if (other.CompareTag("Enemy") || other.CompareTag("Boss"))
-            return;
-
-        // Damage player
-        if (other.CompareTag("Player"))
+        if (player == null)
         {
-            PlayerStats playerHealth = other.GetComponent<PlayerStats>();
-            if (playerHealth != null)
-                playerHealth.TakeDamage(damage);
+            Explode();
+            return;
         }
 
-        // Destroy fireball
+        // --------------------------
+        // HOMING LOGIC
+        // --------------------------
+        if (isHoming && elapsedTime <= homingDuration)
+        {
+            Vector3 direction = (player.position - transform.position).normalized;
+
+            // Prevent extreme vertical flipping
+            direction = Vector3.ProjectOnPlane(direction, Vector3.up).normalized +
+                        Vector3.up * Mathf.Clamp(direction.y, -0.5f, 0.5f);
+
+            Quaternion targetRot = Quaternion.LookRotation(direction);
+            rb.rotation = Quaternion.RotateTowards(
+                rb.rotation,
+                targetRot,
+                rotationSpeed * 50f * Time.fixedDeltaTime
+            );
+        }
+        else
+        {
+            isHoming = false;
+        }
+
+        // Always move forward
+        rb.linearVelocity = transform.forward * speed;
+
+        float dist = Vector3.Distance(transform.position, player.position);
+
+        // Early detonation if too close
+        if (dist <= minimumDistanceToExplode)
+            Explode();
+
+        // Detonate if stuck or slowed down
+        if (rb.linearVelocity.magnitude < minVelocityBeforeExplode)
+            Explode();
+
+        if (elapsedTime >= lifetime)
+            Explode();
+    }
+
+    // Trigger collision with walls / objects
+    void OnTriggerEnter(Collider other)
+    {
+        // Ignore enemies
+        if (other.CompareTag("Enemy"))
+            return;
+
+        // Hit something → explode
+        Explode();
+    }
+
+    void Explode()
+    {
+        if (explosionEffect != null)
+            Instantiate(explosionEffect, transform.position, Quaternion.identity);
+
+        // Damage anything with PlayerStats within radius (guaranteed detection)
+        Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, ~0);
+
+        foreach (Collider hit in hits)
+        {
+            PlayerStats stats = hit.GetComponentInParent<PlayerStats>();
+            if (stats != null)
+            {
+                stats.TakeDamage(damage);
+                Debug.Log($"🔥 Explosion hit player for {damage} damage!");
+            }
+        }
+
         Destroy(gameObject);
+    }
+
+    void OnDrawGizmosSelected()
+    {
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, explosionRadius);
     }
 }
