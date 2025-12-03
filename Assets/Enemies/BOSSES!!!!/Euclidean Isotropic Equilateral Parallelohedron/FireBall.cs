@@ -50,7 +50,7 @@ public class HomingFireball : MonoBehaviour
             player = playerObj.transform;
 
         // Homing only during first quarter of lifetime
-        homingDuration = lifetime * 0.25f;
+        homingDuration = lifetime * 0.15f;
     }
 
     void FixedUpdate()
@@ -117,9 +117,12 @@ public class HomingFireball : MonoBehaviour
     void Explode()
     {
         if (explosionEffect != null)
-            Instantiate(explosionEffect, transform.position, Quaternion.identity);
+        {
+            GameObject expl = Instantiate(explosionEffect, transform.position, Quaternion.identity);
+            Destroy(expl, 2f); // Cleanup explosion effect
+        }
 
-        // Damage anything with PlayerStats within radius (guaranteed detection)
+        // Damage anything with PlayerStats within radius
         Collider[] hits = Physics.OverlapSphere(transform.position, explosionRadius, ~0);
 
         foreach (Collider hit in hits)
@@ -132,8 +135,9 @@ public class HomingFireball : MonoBehaviour
             }
         }
 
-        Destroy(gameObject);
+        Destroy(gameObject); // Destroy the fireball itself
     }
+
 
     void OnDrawGizmosSelected()
     {

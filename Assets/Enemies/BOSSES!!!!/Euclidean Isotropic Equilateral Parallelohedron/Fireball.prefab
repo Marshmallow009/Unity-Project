@@ -81,7 +81,7 @@ MonoBehaviour:
   lifetime: 5
   minimumDistanceToExplode: 1.2
   minVelocityBeforeExplode: 1
-  explosionRadius: 5
+  explosionRadius: 3.5
   explosionEffect: {fileID: 458832480400939920, guid: 547c678228f384772888d39fa6ed29c8, type: 3}
 --- !u!65 &4646663151909732058
 BoxCollider:

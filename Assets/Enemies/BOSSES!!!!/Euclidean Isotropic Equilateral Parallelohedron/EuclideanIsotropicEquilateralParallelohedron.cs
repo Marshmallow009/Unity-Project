@@ -168,8 +168,37 @@ public class EuclideanIsotropicEquilateralParallelohedron : MonoBehaviour, IDama
                 Destroy(piece, rubbleLifetime);
             }
         }
-
         int totalXP = Mathf.RoundToInt(enemyLevel * 1) + baseXP;
+        if (xpPrefab != null && xpPrefab.Length > 0)
+        {
+            // Spawn "10 XP orbs" first
+            while (totalXP >= 10)
+            {
+                Vector3 randomOffset = new Vector3(
+                    Random.Range(-0.5f, 0.5f),
+                    1f,
+                    Random.Range(-0.5f, 0.5f)
+                );
+                GameObject tenOrb = Instantiate(xpPrefab.Length > 1 ? xpPrefab[1] : xpPrefab[0], transform.position + randomOffset, Quaternion.identity);
+                OneXPOrb orbScript = tenOrb.GetComponent<OneXPOrb>();
+                if (orbScript != null) orbScript.xpValue = 10;
+
+                totalXP -= 10;
+            }
+
+            // Spawn remaining "1 XP orbs"
+            for (int i = 0; i < totalXP; i++)
+            {
+                Vector3 randomOffset = new Vector3(
+                    Random.Range(-0.5f, 0.5f),
+                    1f,
+                    Random.Range(-0.5f, 0.5f)
+                );
+                GameObject orb = Instantiate(xpPrefab[0], transform.position + randomOffset, Quaternion.identity);
+                OneXPOrb orbScript = orb.GetComponent<OneXPOrb>();
+                if (orbScript != null) orbScript.xpValue = 1;
+            }
+        }
 
         if (explosionEffect != null)
             Instantiate(explosionEffect, transform.position, Quaternion.identity);

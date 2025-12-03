@@ -608,9 +608,9 @@ MonoBehaviour:
   - {fileID: 1994712955699781875, guid: 5dde5b8dbb55e42d68a52f5e513a713d, type: 3}
   baseXP: 1000
   enemyLevel: 20
-  attackDamage: 25
+  attackDamage: 20
   attackRange: 8
-  attackCooldown: 1.5
+  attackCooldown: 1
   moveSpeed: 3
   bossHealthBar: {fileID: 0}
   explosionEffect: {fileID: 458832480400939920, guid: 547c678228f384772888d39fa6ed29c8, type: 3}
